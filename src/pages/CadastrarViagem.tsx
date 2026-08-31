@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { viagemService } from '../services/viagemService';
+import { Link } from 'react-router-dom';
 import type { ViagemForm } from '../types/viagem';
 
 export function CadastrarViagem() {
@@ -37,10 +38,19 @@ export function CadastrarViagem() {
   };
 
   return (
-    <div className="card">
-      <div className="card-header">
-        <h2>Nova Viagem</h2>
-        <p>Preencha os dados do seu deslocamento para aprovação.</p>
+    <div className="card"> {/* <-- Wrapper adicionado */}
+      <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h2>Nova Viagem</h2>
+          <p>Preencha os dados do seu deslocamento para aprovação.</p>
+        </div>
+        <Link to="/" style={{ 
+          color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 600, 
+          padding: '0.4rem 0.8rem', border: '1px solid var(--border)', 
+          borderRadius: '6px', fontSize: '0.9rem', backgroundColor: '#fff' 
+        }}>
+          ← Cancelar
+        </Link>
       </div>
 
       {status.tipo && status.tipo !== 'carregando' && (

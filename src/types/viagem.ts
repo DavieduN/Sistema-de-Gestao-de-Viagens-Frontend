@@ -7,7 +7,19 @@ export interface ViagemForm {
   empregadoMatricula: string;
 }
 
-export interface Viagem extends ViagemForm {
+export interface Empregado {
+  matricula: string;
+  nome: string;
+  area: string;
+}
+
+export interface Viagem {
   numero: number;
+  destino: string;
+  dataSaida: string;
+  dataRetorno: string;
+  motivo: string;
+  meioTransporte: string;
   situacao: string;
+  empregado: Empregado;
 }

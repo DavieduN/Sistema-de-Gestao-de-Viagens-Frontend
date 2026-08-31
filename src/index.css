@@ -122,3 +122,98 @@ body {
   opacity: 0.7;
   cursor: not-allowed;
 }
+
+/* Estilos para Tabelas (Listagem) */
+.table-container {
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.table th, .table td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.table th {
+  background-color: #f9fafb;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.table tr:hover {
+  background-color: #f9fafb;
+}
+
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.badge.Rascunho { background-color: #e5e7eb; color: #374151; }
+.badge.Solicitada { background-color: #fef08a; color: #854d0e; }
+.badge.Aprovada { background-color: #bbf7d0; color: #166534; }
+.badge.Rejeitada { background-color: #fecaca; color: #991b1b; }
+
+/* Layout de Duas Colunas (Detalhes - UC05) */
+.layout-2-cols {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+}
+
+@media (max-width: 768px) {
+  .layout-2-cols {
+    grid-template-columns: 1fr;
+  }
+}
+
+.details-section {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.details-section:last-child {
+  border-bottom: none;
+}
+
+.details-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+.details-value {
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.action-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.btn-secondary {
+  background-color: #e5e7eb;
+  color: #374151;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  text-align: center;
+  text-decoration: none;
+}
+.btn-secondary:hover { background-color: #d1d5db; }
