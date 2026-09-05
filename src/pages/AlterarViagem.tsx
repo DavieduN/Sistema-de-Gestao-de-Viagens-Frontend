@@ -1,49 +1,79 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { viagemService } from '../services/viagemService';
-import type { ViagemForm } from '../types/viagem';
+import type { ViagemForm, Motivo, MeioTransporte } from '../types/viagem';
 
 export function AlterarViagem() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
   const [formData, setFormData] = useState<ViagemForm>({
-    destino: '', dataSaida: '', dataRetorno: '', motivo: '', meioTransporte: '', empregadoMatricula: ''
+    destino: '', 
+    dataSaida: '', 
+    dataRetorno: '', 
+    motivoId: '', 
+    meioTransporteId: ''
   });
+
+  const [motivos, setMotivos] = useState<Motivo[]>([]);
+  const [meiosTransporte, setMeiosTransporte] = useState<MeioTransporte[]>([]);
 
   const [status, setStatus] = useState<{ tipo: 'sucesso' | 'erro' | 'carregando' | null; mensagem: string }>({
     tipo: 'carregando', mensagem: 'Carregando dados da viagem...'
   });
 
   useEffect(() => {
-    if (id) {
-      viagemService.buscarPorId(Number(id))
-        .then(dados => {
-          if (dados.situacao === 'Aprovada' || dados.situacao === 'Rejeitada') {
-            setStatus({ tipo: 'erro', mensagem: 'Viagens aprovadas ou rejeitadas não podem ser alteradas.' });
-            return;
-          }
-          setFormData({
-            destino: dados.destino,
-            dataSaida: dados.dataSaida,
-            dataRetorno: dados.dataRetorno,
-            motivo: dados.motivo,
-            meioTransporte: dados.meioTransporte,
-            empregadoMatricula: dados.empregado.matricula // Correção do mapeamento
-          });
-          setStatus({ tipo: null, mensagem: '' });
-        })
-        .catch(() => setStatus({ tipo: 'erro', mensagem: 'Viagem não encontrada.' }));
-    }
+    const carregarDadosIniciais = async () => {
+      if (!id) return;
+      try {
+        // Busca os domínios auxiliares e os dados da viagem em paralelo
+        const [listaMotivos, listaTransportes, dadosViagem] = await Promise.all([
+          viagemService.listarMotivos(),
+          viagemService.listarMeiosTransporte(),
+          viagemService.buscarPorId(Number(id))
+        ]);
+
+        setMotivos(listaMotivos);
+        setMeiosTransporte(listaTransportes);
+
+        const situacaoAtual = dadosViagem.situacao?.descricao || '';
+        if (situacaoAtual === 'Aprovada' || situacaoAtual === 'Rejeitada') {
+          setStatus({ tipo: 'erro', mensagem: 'Viagens aprovadas ou rejeitadas não podem ser alteradas.' });
+          return;
+        }
+
+        // Popula o formulário com os IDs corretos vindos do relacionamento
+        setFormData({
+          destino: dadosViagem.destino,
+          dataSaida: dadosViagem.dataSaida,
+          dataRetorno: dadosViagem.dataRetorno,
+          motivoId: dadosViagem.motivo?.id || '',
+          meioTransporteId: dadosViagem.meioTransporte?.id || ''
+        });
+
+        setStatus({ tipo: null, mensagem: '' });
+      } catch (error) {
+        setStatus({ tipo: 'erro', mensagem: 'Erro ao carregar os dados da viagem.' });
+      }
+    };
+
+    carregarDadosIniciais();
   }, [id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    // Converte para número se for um dos campos de ID
+    const parsedValue = (name === 'motivoId' || name === 'meioTransporteId') && value !== '' 
+      ? Number(value) 
+      : value;
+
+    setFormData(prev => ({ ...prev, [name]: parsedValue }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!id) return;
+    
     setStatus({ tipo: 'carregando', mensagem: 'Atualizando solicitação...' });
 
     try {
@@ -58,15 +88,17 @@ export function AlterarViagem() {
 
   if (status.tipo === 'erro' && status.mensagem.includes('não podem ser alteradas')) {
     return (
-      <div className="card">
+      <div className="card" style={{ maxWidth: '900px' }}>
         <div className="alert error">{status.mensagem}</div>
-        <Link to={`/viagem/${id}`} className="btn-secondary" style={{ textDecoration: 'none' }}>Voltar aos detalhes</Link>
+        <Link to={`/viagem/${id}`} className="btn-secondary" style={{ textDecoration: 'none', display: 'inline-block', marginTop: '1rem' }}>
+          Voltar aos detalhes
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="card">
+    <div className="card" style={{ maxWidth: '900px' }}>
       <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h2>Alterar Viagem #{id}</h2>
@@ -86,53 +118,87 @@ export function AlterarViagem() {
       )}
 
       {status.tipo === 'carregando' && status.mensagem.includes('Carregando') ? (
-        <p>{status.mensagem}</p>
+        <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>{status.mensagem}</p>
       ) : (
         <form className="form-grid" onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="destino">Destino</label>
-            <input type="text" id="destino" name="destino" className="form-control" value={formData.destino} onChange={handleChange} required />
+            <input 
+              type="text" 
+              id="destino" 
+              name="destino" 
+              className="form-control" 
+              value={formData.destino} 
+              onChange={handleChange} 
+              required 
+            />
           </div>
 
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="dataSaida">Data de Saída</label>
-              <input type="date" id="dataSaida" name="dataSaida" className="form-control" value={formData.dataSaida} onChange={handleChange} required />
+              <input 
+                type="date" 
+                id="dataSaida" 
+                name="dataSaida" 
+                className="form-control" 
+                value={formData.dataSaida} 
+                onChange={handleChange} 
+                required 
+              />
             </div>
             <div className="form-group">
               <label htmlFor="dataRetorno">Data de Retorno</label>
-              <input type="date" id="dataRetorno" name="dataRetorno" className="form-control" value={formData.dataRetorno} onChange={handleChange} required />
+              <input 
+                type="date" 
+                id="dataRetorno" 
+                name="dataRetorno" 
+                className="form-control" 
+                value={formData.dataRetorno} 
+                onChange={handleChange} 
+                required 
+              />
             </div>
           </div>
 
+          {/* Select Dinâmico para Motivo */}
           <div className="form-group">
-            <label htmlFor="motivo">Motivo</label>
-            <select id="motivo" name="motivo" className="form-control" value={formData.motivo} onChange={handleChange} required>
+            <label htmlFor="motivoId">Motivo</label>
+            <select 
+              id="motivoId" 
+              name="motivoId" 
+              className="form-control" 
+              value={formData.motivoId} 
+              onChange={handleChange} 
+              required
+            >
               <option value="" disabled>Selecione o objetivo da viagem</option>
-              <option value="Reunião com cliente">Reunião com cliente</option>
-              <option value="Treinamento">Treinamento</option>
-              <option value="Evento ou congresso">Evento ou congresso</option>
-              <option value="Visita técnica">Visita técnica</option>
-              <option value="Outro">Outro</option>
+              {motivos.map(motivo => (
+                <option key={motivo.id} value={motivo.id}>
+                  {motivo.descricao}
+                </option>
+              ))}
             </select>
           </div>
 
+          {/* Select Dinâmico para Meio de Transporte */}
           <div className="form-group">
-            <label htmlFor="meioTransporte">Meio de Transporte</label>
-            <select id="meioTransporte" name="meioTransporte" className="form-control" value={formData.meioTransporte} onChange={handleChange} required>
+            <label htmlFor="meioTransporteId">Meio de Transporte</label>
+            <select 
+              id="meioTransporteId" 
+              name="meioTransporteId" 
+              className="form-control" 
+              value={formData.meioTransporteId} 
+              onChange={handleChange} 
+              required
+            >
               <option value="" disabled>Selecione o meio principal</option>
-              <option value="Avião">Avião</option>
-              <option value="Ônibus">Ônibus</option>
-              <option value="Carro próprio">Carro próprio</option>
-              <option value="Carro da empresa">Carro da empresa</option>
-              <option value="Trem">Trem</option>
-              <option value="Outro">Outro</option>
+              {meiosTransporte.map(transporte => (
+                <option key={transporte.id} value={transporte.id}>
+                  {transporte.descricao}
+                </option>
+              ))}
             </select>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="empregadoMatricula">Matrícula (Responsável)</label>
-            <input type="text" id="empregadoMatricula" name="empregadoMatricula" className="form-control" value={formData.empregadoMatricula} readOnly style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }} />
           </div>
 
           <button type="submit" className="btn-primary" disabled={status.tipo === 'carregando'}>

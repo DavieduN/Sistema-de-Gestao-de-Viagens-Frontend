@@ -3,6 +3,13 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { viagemService } from '../services/viagemService';
 import type { Viagem } from '../types/viagem';
 
+// Função para formatar a data de aaaa-mm-dd para dd/mm/aaaa
+function formatarData(dataString: string) {
+  if (!dataString) return '';
+  const [ano, mes, dia] = dataString.split('-');
+  return `${dia}/${mes}/${ano}`;
+}
+
 export function DetalhesViagem() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -30,10 +37,20 @@ export function DetalhesViagem() {
     }
   };
 
-  if (erro) return <div className="card" style={{ maxWidth: '900px' }}><div className="alert error">{erro}</div><Link to="/" className="btn-secondary" style={{ textDecoration: 'none' }}>Voltar</Link></div>;
+  if (erro) {
+    return (
+      <div className="card" style={{ maxWidth: '900px' }}>
+        <div className="alert error">{erro}</div>
+        <Link to="/" className="btn-secondary" style={{ textDecoration: 'none' }}>Voltar</Link>
+      </div>
+    );
+  }
+  
   if (!viagem) return <div>Carregando detalhes...</div>;
 
-  const bloqueiaEdicao = viagem.situacao === 'Aprovada' || viagem.situacao === 'Rejeitada';
+  // A situação agora é lida do objeto aninhado
+  const situacaoAtual = viagem.situacao?.descricao || '';
+  const bloqueiaEdicao = situacaoAtual === 'Aprovada' || situacaoAtual === 'Rejeitada';
 
   return (
     <div className="card" style={{ maxWidth: '900px' }}>
@@ -61,15 +78,16 @@ export function DetalhesViagem() {
           <div className="details-section">
             <div className="details-label">Período</div>
             <div className="details-value">
-              {viagem.dataSaida} até {viagem.dataRetorno}
+              {formatarData(viagem.dataSaida)} até {formatarData(viagem.dataRetorno)}
             </div>
           </div>
 
           <div className="details-section">
             <div className="details-label">Motivo e Transporte</div>
-            <div className="details-value">{viagem.motivo}</div>
+            {/* Lendo do objeto aninhado */}
+            <div className="details-value">{viagem.motivo?.descricao}</div>
             <div style={{ marginTop: '0.5rem', color: 'var(--text-muted)' }}>
-              Viajando de {viagem.meioTransporte}
+              Viajando de {viagem.meioTransporte?.descricao}
             </div>
           </div>
         </div>
@@ -78,8 +96,8 @@ export function DetalhesViagem() {
           <div className="details-section" style={{ borderBottom: 'none', paddingBottom: 0 }}>
             <div className="details-label">Situação Atual</div>
             <div style={{ marginTop: '0.5rem' }}>
-              <span className={`badge ${viagem.situacao}`} style={{ fontSize: '1rem', padding: '0.4rem 1rem' }}>
-                {viagem.situacao}
+              <span className={`badge ${situacaoAtual}`} style={{ fontSize: '1rem', padding: '0.4rem 1rem' }}>
+                {situacaoAtual}
               </span>
             </div>
           </div>
@@ -87,7 +105,9 @@ export function DetalhesViagem() {
           <div className="details-section" style={{ borderBottom: 'none', marginTop: '1.5rem' }}>
             <div className="details-label">Responsável</div>
             <div className="details-value" style={{ fontSize: '1rem' }}>
-              Matrícula: {viagem.empregado.matricula}
+              {/* Ajustado de empregado para solicitante de acordo com o Swagger */}
+              <div><strong>{viagem.solicitante?.nome}</strong></div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Matrícula: {viagem.solicitante?.matricula}</div>
             </div>
           </div>
 

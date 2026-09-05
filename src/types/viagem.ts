@@ -1,16 +1,46 @@
-export interface ViagemForm {
-  destino: string;
-  dataSaida: string;
-  dataRetorno: string;
-  motivo: string;
-  meioTransporte: string;
-  empregadoMatricula: string;
+export interface Situacao {
+  id: number;
+  descricao: string;
+}
+
+export interface Motivo {
+  id: number;
+  descricao: string;
+}
+
+export interface MeioTransporte {
+  id: number;
+  descricao: string;
+}
+
+export interface Cargo {
+  id: number;
+  nome: string;
+}
+
+export interface Area {
+  id: number;
+  nome: string;
 }
 
 export interface Empregado {
   matricula: string;
   nome: string;
-  area: string;
+  cargo: Cargo;
+  area: Area;
+}
+
+export interface ViagemForm {
+  destino: string;
+  dataSaida: string;
+  dataRetorno: string;
+  motivoId: number | ''; 
+  meioTransporteId: number | ''; 
+}
+
+export interface AvaliacaoForm {
+  acao: 'Aprovada' | 'Rejeitada' | 'Ajustes Solicitados';
+  comentario: string;
 }
 
 export interface Viagem {
@@ -18,8 +48,10 @@ export interface Viagem {
   destino: string;
   dataSaida: string;
   dataRetorno: string;
-  motivo: string;
-  meioTransporte: string;
-  situacao: string;
-  empregado: Empregado;
+  motivo: Motivo;
+  meioTransporte: MeioTransporte;
+  situacao: Situacao;
+  solicitante: Empregado;
+  cargoSnapshot?: Cargo;
+  areaSnapshot?: Area;
 }

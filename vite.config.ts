@@ -7,12 +7,8 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 3000,
     proxy: {
-      '/viagem': {
-        target: 'http://api:8080',
-        changeOrigin: true,
-        secure: false,
-      },
-      '/empregado': {
+      // O regex ^/(...) captura qualquer requisição que comece com essas palavras e manda para o backend
+      '^/(auth|viagem|empregado|motivo|meio-transporte|situacao|cargo|area|historico-viagem)': {
         target: 'http://api:8080',
         changeOrigin: true,
         secure: false,
