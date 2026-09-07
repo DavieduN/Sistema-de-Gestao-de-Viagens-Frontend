@@ -55,3 +55,11 @@ export interface Viagem {
   cargoSnapshot?: Cargo;
   areaSnapshot?: Area;
 }
+
+export interface HistoricoViagem {
+  id: number;
+  situacao: { descricao: string };
+  responsavel: { nome: string; matricula: string };
+  dataHora: string;
+  comentario: string;
+}

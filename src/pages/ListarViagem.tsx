@@ -3,22 +3,26 @@ import { Link } from 'react-router-dom';
 import { viagemService } from '../services/viagemService';
 import type { Viagem } from '../types/viagem';
 
-function formatarData(dataString: string) {
-  if (!dataString) return '';
-  const [ano, mes, dia] = dataString.split('-');
-  return `${dia}/${mes}/${ano}`;
-}
-
-// Função auxiliar para extrair a role do token JWT
-function getRoleDoToken(): string {
+// Função auxiliar mais robusta para identificar o Gestor no JWT
+function verificarSeGestor(): boolean {
   const token = localStorage.getItem('sgv_token');
-  if (!token) return '';
+  if (!token) return false;
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
-    // Ajuste "cargo" para a chave exata que o Spring envia no payload do JWT
-    return payload.cargo || ''; 
+    
+    // 1. Tenta ler se o backend enviou o objeto cargo (payload.cargo.nome)
+    const nomeCargo = payload.cargo?.nome || payload.cargo || '';
+    if (typeof nomeCargo === 'string' && nomeCargo.toUpperCase() === 'GESTOR') return true;
+    
+    // 2. Tenta ler se o backend usou o padrão de roles do Spring (authorities)
+    const authorities = payload.authorities || payload.roles || [];
+    if (Array.isArray(authorities)) {
+      return authorities.some((a: any) => a.authority === 'ROLE_GESTOR' || a === 'ROLE_GESTOR');
+    }
+    
+    return false;
   } catch {
-    return '';
+    return false;
   }
 }
 
@@ -27,12 +31,12 @@ export function ListarViagem() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
 
-  const role = getRoleDoToken();
-  const isGestor = role === 'ROLE_GESTOR';
+  const isGestor = verificarSeGestor();
 
   useEffect(() => {
     const buscarDados = async () => {
       try {
+        // Se for gestor, lista todas as viagens. Se for colaborador, lista apenas as suas.
         const dados = isGestor 
           ? await viagemService.listarTodas() 
           : await viagemService.listarMinhasViagens();
@@ -66,6 +70,7 @@ export function ListarViagem() {
               : 'Consulte e acompanhe o status das suas solicitações cadastradas.'}
           </p>
         </div>
+        {/* O botão "Nova Viagem" fica visível para todos, pois gestores também viajam */}
         <Link to="/cadastrar" className="btn-primary" style={{ textDecoration: 'none', whiteSpace: 'nowrap', marginTop: 0 }}>
           + Nova Viagem
         </Link>
@@ -79,7 +84,6 @@ export function ListarViagem() {
         </div>
       ) : viagens.length === 0 ? (
         
-        /* Estado vazio melhorado visualmente */
         <div style={{ 
           padding: '3rem 1rem', 
           textAlign: 'center', 
@@ -88,10 +92,10 @@ export function ListarViagem() {
           border: '1px dashed var(--border)',
           margin: '0 1rem 1rem 1rem'
         }}>
-          <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>Nenhuma viagem registrada</h3>
+          <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>Nenhuma viagem encontrada</h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
             {isGestor 
-              ? 'Não há solicitações de viagem pendentes no sistema.'
+              ? 'Não há solicitações de viagem registradas no sistema.'
               : 'Você ainda não possui solicitações de viagem no sistema.'}
           </p>
           {!isGestor && (
@@ -117,10 +121,8 @@ export function ListarViagem() {
               {viagens.map(viagem => (
                 <tr key={viagem.numero}>
                   <td><strong>{viagem.destino}</strong></td>
-                  {/* Adiciona a coluna do Solicitante apenas se for a visão do Gestor */}
                   {isGestor && <td>{viagem.solicitante?.nome}</td>}
-                  <td>{formatarData(viagem.dataSaida)} a {formatarData(viagem.dataRetorno)}</td>
-                  {/* Atualizado para acessar a propriedade aninhada .descricao */}
+                  <td>{viagem.dataSaida} a {viagem.dataRetorno}</td>
                   <td><span className={`badge ${viagem.situacao?.descricao}`}>{viagem.situacao?.descricao}</span></td>
                   <td>
                     <Link to={`/viagem/${viagem.numero}`} className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}>

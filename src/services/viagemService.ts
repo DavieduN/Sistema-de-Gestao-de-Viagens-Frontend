@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { Viagem, ViagemForm, Motivo, MeioTransporte, AvaliacaoForm } from '../types/viagem';
+import type { Viagem, ViagemForm, Motivo, MeioTransporte, AvaliacaoForm, HistoricoViagem } from '../types/viagem';
 
 export const viagemService = {
   listarMotivos: async (): Promise<Motivo[]> => {
@@ -17,7 +17,7 @@ export const viagemService = {
     return response.data;
   },
 
-listarTodas: async (): Promise<Viagem[]> => {
+  listarTodas: async (): Promise<Viagem[]> => {
     const response = await api.get<Viagem[]>('/viagem');
     return response.data;
   },
@@ -47,5 +47,10 @@ listarTodas: async (): Promise<Viagem[]> => {
 
   avaliarViagem: async (numero: number, dados: AvaliacaoForm): Promise<void> => {
     await api.patch(`/viagem/${numero}/avaliar`, dados);
+  },
+
+  listarHistorico: async (numeroViagem: number): Promise<HistoricoViagem[]> => {
+    const response = await api.get<HistoricoViagem[]>(`/historico-viagem/viagem/${numeroViagem}`);
+    return response.data;
   }
 };
