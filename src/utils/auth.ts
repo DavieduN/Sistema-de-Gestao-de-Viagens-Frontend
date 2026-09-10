@@ -15,5 +15,9 @@ export function isGestorLogado(): boolean {
 
 export function getMatriculaLogada(): string {
   const payload = getPayloadToken();
-  return payload?.sub || ''; 
+  return payload?.sub || '';
+}
+
+export function logout(): void {
+  localStorage.removeItem('sgv_token');
 }

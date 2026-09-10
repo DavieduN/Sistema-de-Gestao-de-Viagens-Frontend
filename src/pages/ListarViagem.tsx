@@ -1,16 +1,22 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { viagemService } from '../services/viagemService';
 import type { Viagem } from '../types/viagem';
-import { isGestorLogado } from '../utils/auth';
+import { isGestorLogado, logout } from '../utils/auth';
 import { formatarData } from '../utils/formatters';
 
 export function ListarViagem() {
+  const navigate = useNavigate();
   const [viagens, setViagens] = useState<Viagem[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
 
   const isGestor = isGestorLogado();
+
+  const handleSair = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
 
   useEffect(() => {
     const buscarDados = async () => {
@@ -40,9 +46,14 @@ export function ListarViagem() {
               : 'Consulte e acompanhe o status das suas solicitações cadastradas.'}
           </p>
         </div>
-        <Link to="/cadastrar" className="btn-primary" style={{ textDecoration: 'none', whiteSpace: 'nowrap', marginTop: 0 }}>
-          + Nova Viagem
-        </Link>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <Link to="/cadastrar" className="btn-primary" style={{ textDecoration: 'none', whiteSpace: 'nowrap', marginTop: 0 }}>
+            + Nova Viagem
+          </Link>
+          <button type="button" onClick={handleSair} className="btn-secondary" style={{ whiteSpace: 'nowrap', marginTop: 0 }}>
+            Sair
+          </button>
+        </div>
       </div>
 
       {erro && <div className="alert error" style={{ margin: '1rem' }}>{erro}</div>}
