@@ -30,6 +30,14 @@ export interface Empregado {
   area: Area;
 }
 
+export interface EmpregadoForm {
+  matricula: string;
+  senha: string;
+  nome: string;
+  cargoId: number | '';
+  areaId: number | '';
+}
+
 export interface ViagemForm {
   destino: string;
   dataSaida: string;

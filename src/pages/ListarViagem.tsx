@@ -50,6 +50,11 @@ export function ListarViagem() {
           <Link to="/cadastrar" className="btn-primary" style={{ textDecoration: 'none', whiteSpace: 'nowrap', marginTop: 0 }}>
             + Nova Viagem
           </Link>
+          {isGestor && (
+            <Link to="/colaboradores/cadastrar" className="btn-secondary" style={{ textDecoration: 'none', whiteSpace: 'nowrap', marginTop: 0 }}>
+              + Novo Colaborador
+            </Link>
+          )}
           <button type="button" onClick={handleSair} className="btn-secondary" style={{ whiteSpace: 'nowrap', marginTop: 0 }}>
             Sair
           </button>
