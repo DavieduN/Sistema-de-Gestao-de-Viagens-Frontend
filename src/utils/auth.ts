@@ -18,6 +18,11 @@ export function getMatriculaLogada(): string {
   return payload?.sub || '';
 }
 
+export function tokenValido(): boolean {
+  const payload = getPayloadToken();
+  return !!payload && typeof payload.exp === 'number' && payload.exp * 1000 > Date.now();
+}
+
 export function logout(): void {
   localStorage.removeItem('sgv_token');
 }

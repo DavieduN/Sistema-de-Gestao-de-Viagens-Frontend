@@ -5,10 +5,14 @@ import { CadastrarColaborador } from './pages/CadastrarColaborador';
 import { DetalhesViagem } from './pages/DetalhesViagem';
 import { AlterarViagem } from './pages/AlterarViagem';
 import { Login } from './pages/Login';
+import { tokenValido, logout } from './utils/auth';
 
 function RotaPrivada({ children }: { children: JSX.Element }) {
-  const token = localStorage.getItem('sgv_token');
-  return token ? children : <Navigate to="/login" replace />;
+  if (!tokenValido()) {
+    logout();
+    return <Navigate to="/login" replace />;
+  }
+  return children;
 }
 
 function App() {
