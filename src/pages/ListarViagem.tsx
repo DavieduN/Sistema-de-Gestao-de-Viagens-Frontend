@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { viagemService } from '../services/viagemService';
+import { empregadoService } from '../services/empregadoService';
 import type { Viagem } from '../types/viagem';
-import { isGestorLogado, logout } from '../utils/auth';
+import { isGestorLogado, logout, getMatriculaLogada } from '../utils/auth';
 import { formatarData } from '../utils/formatters';
 
 export function ListarViagem() {
@@ -10,8 +11,10 @@ export function ListarViagem() {
   const [viagens, setViagens] = useState<Viagem[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
+  const [nomeUsuario, setNomeUsuario] = useState('');
 
   const isGestor = isGestorLogado();
+  const matriculaLogada = getMatriculaLogada();
 
   const handleSair = () => {
     logout();
@@ -35,10 +38,21 @@ export function ListarViagem() {
     buscarDados();
   }, [isGestor]);
 
+  useEffect(() => {
+    if (!matriculaLogada) return;
+    empregadoService
+      .buscarPorMatricula(matriculaLogada)
+      .then((empregado) => setNomeUsuario(empregado.nome))
+      .catch(() => setNomeUsuario(''));
+  }, [matriculaLogada]);
+
   return (
     <div className="card" style={{ maxWidth: '900px' }}>
       <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1.5rem', flexWrap: 'wrap' }}>
         <div style={{ flex: '1 1 min-content' }}>
+          <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+            Olá, <strong style={{ color: 'var(--text-main)' }}>{nomeUsuario || matriculaLogada}</strong>
+          </p>
           <h2>{isGestor ? 'Todas as Viagens (Gestor)' : 'Minhas Viagens'}</h2>
           <p style={{ marginTop: '0.25rem', lineHeight: '1.4' }}>
             {isGestor 

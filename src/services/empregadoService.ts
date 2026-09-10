@@ -16,4 +16,9 @@ export const empregadoService = {
     const response = await api.post<Empregado>('/empregado', dados);
     return response.data;
   },
+
+  buscarPorMatricula: async (matricula: string): Promise<Empregado> => {
+    const response = await api.get<Empregado>(`/empregado/${matricula}`);
+    return response.data;
+  },
 };

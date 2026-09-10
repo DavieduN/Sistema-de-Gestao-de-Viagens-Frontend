@@ -5,6 +5,7 @@ import type { Viagem } from '../types/viagem';
 import type { HistoricoViagem } from '../types/viagem';
 import { isGestorLogado, getMatriculaLogada } from '../utils/auth';
 import { formatarData, formatarDataHora } from '../utils/formatters';
+import { PainelFinanceiro } from '../components/PainelFinanceiro';
 
 export function DetalhesViagem() {
   const { id } = useParams<{ id: string }>();
@@ -105,8 +106,10 @@ export function DetalhesViagem() {
   // O gestor avalia as viagens solicitadas (desde que não seja a dele próprio)
   const permiteAvaliacao = situacaoAtual === 'Solicitada' && isGestor && !isDono;
 
+  const viagemAprovada = situacaoAtual === 'Aprovada';
+
   return (
-    <div className="card" style={{ maxWidth: '900px' }}>
+    <div className="card" style={{ maxWidth: viagemAprovada ? '1200px' : '900px' }}>
       <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h2>Detalhes da Viagem #{viagem.numero}</h2>
@@ -119,7 +122,8 @@ export function DetalhesViagem() {
 
       {erro && <div className="alert error" style={{ marginBottom: '1.5rem' }}>{erro}</div>}
 
-      <div className="layout-2-cols">
+      <div style={viagemAprovada ? { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 380px)', gap: '2rem', alignItems: 'start' } : undefined}>
+      <div className="layout-2-cols" style={viagemAprovada ? { display: 'block' } : undefined}>
         <div>
           <div className="details-section">
             <div className="details-label">Identificação</div>
@@ -220,6 +224,15 @@ export function DetalhesViagem() {
             </div>
           )}
         </div>
+      </div>
+
+      {viagemAprovada && (
+        <PainelFinanceiro
+          numeroViagem={viagem.numero}
+          permiteLancamento={isDono}
+          situacao={situacaoAtual}
+        />
+      )}
       </div>
 
       <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '2px solid var(--border)' }}>
