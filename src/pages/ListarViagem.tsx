@@ -2,47 +2,24 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { viagemService } from '../services/viagemService';
 import type { Viagem } from '../types/viagem';
-
-// Função auxiliar mais robusta para identificar o Gestor no JWT
-function verificarSeGestor(): boolean {
-  const token = localStorage.getItem('sgv_token');
-  if (!token) return false;
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    
-    // 1. Tenta ler se o backend enviou o objeto cargo (payload.cargo.nome)
-    const nomeCargo = payload.cargo?.nome || payload.cargo || '';
-    if (typeof nomeCargo === 'string' && nomeCargo.toUpperCase() === 'GESTOR') return true;
-    
-    // 2. Tenta ler se o backend usou o padrão de roles do Spring (authorities)
-    const authorities = payload.authorities || payload.roles || [];
-    if (Array.isArray(authorities)) {
-      return authorities.some((a: any) => a.authority === 'ROLE_GESTOR' || a === 'ROLE_GESTOR');
-    }
-    
-    return false;
-  } catch {
-    return false;
-  }
-}
+import { isGestorLogado } from '../utils/auth';
+import { formatarData } from '../utils/formatters';
 
 export function ListarViagem() {
   const [viagens, setViagens] = useState<Viagem[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
 
-  const isGestor = verificarSeGestor();
+  const isGestor = isGestorLogado();
 
   useEffect(() => {
     const buscarDados = async () => {
       try {
-        // Se for gestor, lista todas as viagens. Se for colaborador, lista apenas as suas.
         const dados = isGestor 
           ? await viagemService.listarTodas() 
           : await viagemService.listarMinhasViagens();
         setViagens(dados);
       } catch (err) {
-        console.error("Erro ao buscar viagens:", err);
         setErro('Falha ao carregar as viagens.');
       } finally {
         setCarregando(false);
@@ -54,14 +31,7 @@ export function ListarViagem() {
 
   return (
     <div className="card" style={{ maxWidth: '900px' }}>
-      
-      <div className="card-header" style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'flex-start', 
-        gap: '1.5rem', 
-        flexWrap: 'wrap' 
-      }}>
+      <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1.5rem', flexWrap: 'wrap' }}>
         <div style={{ flex: '1 1 min-content' }}>
           <h2>{isGestor ? 'Todas as Viagens (Gestor)' : 'Minhas Viagens'}</h2>
           <p style={{ marginTop: '0.25rem', lineHeight: '1.4' }}>
@@ -70,7 +40,6 @@ export function ListarViagem() {
               : 'Consulte e acompanhe o status das suas solicitações cadastradas.'}
           </p>
         </div>
-        {/* O botão "Nova Viagem" fica visível para todos, pois gestores também viajam */}
         <Link to="/cadastrar" className="btn-primary" style={{ textDecoration: 'none', whiteSpace: 'nowrap', marginTop: 0 }}>
           + Nova Viagem
         </Link>
@@ -83,15 +52,7 @@ export function ListarViagem() {
           <p>Carregando viagens...</p>
         </div>
       ) : viagens.length === 0 ? (
-        
-        <div style={{ 
-          padding: '3rem 1rem', 
-          textAlign: 'center', 
-          backgroundColor: '#f9fafb', 
-          borderRadius: '8px',
-          border: '1px dashed var(--border)',
-          margin: '0 1rem 1rem 1rem'
-        }}>
+        <div style={{ padding: '3rem 1rem', textAlign: 'center', backgroundColor: '#f9fafb', borderRadius: '8px', border: '1px dashed var(--border)', margin: '0 1rem 1rem 1rem' }}>
           <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>Nenhuma viagem encontrada</h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
             {isGestor 
@@ -104,7 +65,6 @@ export function ListarViagem() {
             </Link>
           )}
         </div>
-        
       ) : (
         <div className="table-container">
           <table className="table">
@@ -122,7 +82,8 @@ export function ListarViagem() {
                 <tr key={viagem.numero}>
                   <td><strong>{viagem.destino}</strong></td>
                   {isGestor && <td>{viagem.solicitante?.nome}</td>}
-                  <td>{viagem.dataSaida} a {viagem.dataRetorno}</td>
+                  {/* Utilizando o utilitário aqui */}
+                  <td>{formatarData(viagem.dataSaida)} a {formatarData(viagem.dataRetorno)}</td>
                   <td><span className={`badge ${viagem.situacao?.descricao}`}>{viagem.situacao?.descricao}</span></td>
                   <td>
                     <Link to={`/viagem/${viagem.numero}`} className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}>

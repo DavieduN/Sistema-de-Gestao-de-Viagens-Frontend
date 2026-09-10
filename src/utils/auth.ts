@@ -12,3 +12,8 @@ export function isGestorLogado(): boolean {
   const payload = getPayloadToken();
   return payload?.cargo?.toUpperCase() === 'GESTOR';
 }
+
+export function getMatriculaLogada(): string {
+  const payload = getPayloadToken();
+  return payload?.sub || ''; 
+}

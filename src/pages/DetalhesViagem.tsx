@@ -1,20 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { viagemService } from '../services/viagemService';
-import type { Viagem, HistoricoViagem } from '../types/viagem';
-import { isGestorLogado } from '../utils/auth';
-
-function formatarDataHora(dataString: string) {
-  if (!dataString) return '';
-  const data = new Date(dataString);
-  return data.toLocaleString('pt-BR');
-}
-
-function formatarData(dataString: string) {
-  if (!dataString) return '';
-  const [ano, mes, dia] = dataString.split('-');
-  return `${dia}/${mes}/${ano}`;
-}
+import type { Viagem } from '../types/viagem';
+import type { HistoricoViagem } from '../types/viagem';
+import { isGestorLogado, getMatriculaLogada } from '../utils/auth';
+import { formatarData, formatarDataHora } from '../utils/formatters';
 
 export function DetalhesViagem() {
   const { id } = useParams<{ id: string }>();
@@ -28,6 +18,7 @@ export function DetalhesViagem() {
   const [comentarioAvaliacao, setComentarioAvaliacao] = useState('');
 
   const isGestor = isGestorLogado();
+  const matriculaLogada = getMatriculaLogada();
 
   const carregarDados = async () => {
     if (!id) return;
@@ -65,7 +56,7 @@ export function DetalhesViagem() {
     setProcessandoAcao(true);
     try {
       await viagemService.submeterParaAnalise(viagem.numero);
-      await carregarDados(); // Recarrega viagem e histórico
+      await carregarDados(); 
     } catch (error: any) {
       setErro(error.response?.data?.message || 'Erro ao submeter a solicitação.');
     } finally {
@@ -106,8 +97,13 @@ export function DetalhesViagem() {
   if (!viagem) return <div>Carregando detalhes...</div>;
 
   const situacaoAtual = viagem.situacao?.descricao || '';
-  const permiteEdicao = (situacaoAtual === 'Rascunho' || situacaoAtual === 'Ajustes Solicitados') && !isGestor;
-  const permiteAvaliacao = situacaoAtual === 'Solicitada' && isGestor;
+  const isDono = viagem.solicitante?.matricula === matriculaLogada;
+  
+  // O dono edita as próprias viagens (mesmo que seja o gestor)
+  const permiteEdicao = (situacaoAtual === 'Rascunho' || situacaoAtual === 'Ajustes Solicitados') && isDono;
+  
+  // O gestor avalia as viagens solicitadas (desde que não seja a dele próprio)
+  const permiteAvaliacao = situacaoAtual === 'Solicitada' && isGestor && !isDono;
 
   return (
     <div className="card" style={{ maxWidth: '900px' }}>
@@ -116,11 +112,7 @@ export function DetalhesViagem() {
           <h2>Detalhes da Viagem #{viagem.numero}</h2>
           <p>Visão geral da solicitação de deslocamento.</p>
         </div>
-        <Link to="/" style={{ 
-          color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 600, 
-          padding: '0.4rem 0.8rem', border: '1px solid var(--border)', 
-          borderRadius: '6px', fontSize: '0.9rem', backgroundColor: '#fff' 
-        }}>
+        <Link to="/" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 600, padding: '0.4rem 0.8rem', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '0.9rem', backgroundColor: '#fff' }}>
           ← Voltar
         </Link>
       </div>
@@ -212,30 +204,15 @@ export function DetalhesViagem() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <button 
-                  className="btn-primary" 
-                  style={{ backgroundColor: '#22c55e', borderColor: '#22c55e', margin: 0 }}
-                  onClick={() => handleAvaliar('Aprovada')}
-                  disabled={processandoAcao}
-                >
+                <button className="btn-primary" style={{ backgroundColor: '#22c55e', borderColor: '#22c55e', margin: 0 }} onClick={() => handleAvaliar('Aprovada')} disabled={processandoAcao}>
                   {processandoAcao ? '...' : '✓ Aprovar Viagem'}
                 </button>
                 
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
-                  <button 
-                    className="btn-secondary" 
-                    style={{ flex: 1, backgroundColor: '#eab308', color: '#fff', border: 'none', margin: 0 }}
-                    onClick={() => handleAvaliar('Ajustes Solicitados')}
-                    disabled={processandoAcao}
-                  >
+                  <button className="btn-secondary" style={{ flex: 1, backgroundColor: '#eab308', color: '#fff', border: 'none', margin: 0 }} onClick={() => handleAvaliar('Ajustes Solicitados')} disabled={processandoAcao}>
                     Pedir Ajustes
                   </button>
-                  <button 
-                    className="btn-secondary" 
-                    style={{ flex: 1, backgroundColor: '#ef4444', color: '#fff', border: 'none', margin: 0 }}
-                    onClick={() => handleAvaliar('Rejeitada')}
-                    disabled={processandoAcao}
-                  >
+                  <button className="btn-secondary" style={{ flex: 1, backgroundColor: '#ef4444', color: '#fff', border: 'none', margin: 0 }} onClick={() => handleAvaliar('Rejeitada')} disabled={processandoAcao}>
                     ✗ Rejeitar
                   </button>
                 </div>
@@ -245,7 +222,6 @@ export function DetalhesViagem() {
         </div>
       </div>
 
-      {/* SEÇÃO DE HISTÓRICO E JUSTIFICATIVAS */}
       <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '2px solid var(--border)' }}>
         <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>Histórico da Solicitação</h3>
         {historico.length === 0 ? (
@@ -265,7 +241,6 @@ export function DetalhesViagem() {
           </div>
         )}
       </div>
-
     </div>
   );
 }
